@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="mn" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plannes - Өдрийн Төлөвлөлт ба Архивин Систем</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#FACC15',
+                            500: '#EAB308',
+                            600: '#CA8A04',
+                            glow: '#FFE875'
+                        },
+                        emerald: {
+                            400: '#34D399',
+                            500: '#10B981',
+                            600: '#059669',
+                            glow: '#6EE7B7'
+                        },
+                        violet: {
+                            900: '#0F0926',
+                            800: '#1A0E40',
+                            700: '#2A1768',
+                            500: '#8B5CF6',
+                            glow: '#B794F4'
+                        },
+                        dark: {
+                            900: '#090A0F',
+                            800: '#12141D',
+                            700: '#1E2130',
+                            600: '#2D3247'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-gold': '0 0 15px rgba(250, 204, 21, 0.35), 0 0 30px rgba(250, 204, 21, 0.1)',
+                        'neon-violet': '0 0 15px rgba(139, 92, 246, 0.35), 0 0 30px rgba(139, 92, 246, 0.1)',
+                        'neon-emerald': '0 0 15px rgba(16, 185, 129, 0.35), 0 0 30px rgba(16, 185, 129, 0.1)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #090A0F;
+            color: #F3F4F6;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(18, 20, 29, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(30, 33, 48, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #FFF099 0%, #FACC15 50%, #CA8A04 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .violet-gradient-text {
+            background: linear-gradient(135deg, #E9D5FF 0%, #A855F7 50%, #6B21A8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .emerald-gradient-text {
+            background: linear-gradient(135deg, #A7F3D0 0%, #10B981 50%, #047857 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gold-border-glow {
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.15);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(18, 20, 29, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(250, 204, 21, 0.5);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .glass-panel, .glass-card { background: none !important; border: 1px solid #ccc !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-violet-500 selection:text-white">
+
+    <!-- Toast Notification Banner -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none no-print">
+        <div class="glass-panel px-5 py-3 rounded-xl border border-gold-400/40 shadow-neon-gold flex items-center space-x-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-gold-400" id="toastIcon"></i>
+            <span class="text-sm font-semibold text-white" id="toastMessage">Амжилттай хадгаллаа!</span>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="no-print sticky top-0 z-40 w-full glass-panel border-b border-gray-800/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-emerald-500 to-gold-400 p-[1.5px] flex items-center justify-center shadow-neon-gold">
+                    <div class="w-full h-full bg-dark-900 rounded-[10px] flex items-center justify-center">
+                        <i data-lucide="crown" class="w-5 h-5 text-gold-400"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-lg tracking-wider text-white">ODOO</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-gold-500 to-emerald-500 text-dark-900 shadow-sm">PREMIUM</span>
+                    </div>
+                    <p class="text-[10px] text-gray-400 tracking-widest uppercase">Үр бүтээмж & Архивин Систем</p>
+                </div>
+            </div>
+
+            <!-- VIP Badge & XP Profile Bar -->
+            <div class="hidden md:flex items-center space-x-6">
+                <!-- VIP Status Badge -->
+                <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-dark-800/80 border border-gold-500/30">
+                    <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
+                    <span class="text-xs font-semibold gold-gradient-text" id="userVipTier">NEW MEMBER</span>
+                </div>
+
+                <!-- Level & Progress -->
+                <div class="flex flex-col w-48">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-gray-300 font-medium" id="userLevelTitle">Түвшин 1: Эхлэгч</span>
+                        <span class="text-gold-400 font-bold" id="userXpText">0 / 1,000 XP</span>
+                    </div>
+                    <div class="w-full bg-dark-700 h-2 rounded-full overflow-hidden p-0.5 border border-white/5">
+                        <div id="xpProgressBar" class="bg-gradient-to-r from-violet-500 via-emerald-400 to-gold-400 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="exportData()" title="Мэдээлэл Экспортлох (JSON)" class="p-2 rounded-lg bg-dark-700/60 hover:bg-dark-600 text-gray-300 hover:text-gold-400 border border-white/5 transition">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                </button>
+                <button onclick="document.getElementById('importFileInput').click()" title="Мэдээлэл Импортлох (JSON)" class="p-2 rounded-lg bg-dark-700/60 hover:bg-dark-600 text-gray-300 hover:text-violet-400 border border-white/5 transition">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                </button>
+                <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="importData(event)">
+                <button onclick="window.print()" title="Хэвлэх / PDF" class="p-2 rounded-lg bg-dark-700/60 hover:bg-dark-600 text-gray-300 hover:text-white border border-white/5 transition">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                </button>
+                <button onclick="openResetModal()" title="Бүх Датаг Арилгах" class="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 text-xs font-medium transition flex items-center space-x-1.5">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Шинэчлэх</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="no-print bg-dark-900/90 border-b border-gray-800/50 sticky top-[65px] z-30 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto custom-scrollbar">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active px-5 py-3 text-sm font-medium border-b-2 border-gold-400 text-gold-400 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Хянах Самбар</span>
+            </button>
+            <button onclick="switchTab('planning')" id="tab-planning" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Өдрийн Төлөвлөгөө</span>
+            </button>
+            <button onclick="switchTab('goals')" id="tab-goals" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="target" class="w-4 h-4"></i>
+                <span>Урт Хугацааны Зорилгууд</span>
+            </button>
+            <button onclick="switchTab('pomodoro')" id="tab-pomodoro" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="timer" class="w-4 h-4"></i>
+                <span>Помодоро Студи</span>
+            </button>
+            <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="flame" class="w-4 h-4"></i>
+                <span>Дадал Мөшгигч</span>
+            </button>
+            <button onclick="switchTab('archive')" id="tab-archive" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span>Календарь & Архив</span>
+            </button>
+            <button onclick="switchTab('journal')" id="tab-journal" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap transition">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span>Тэмдэглэл & AI Коуч</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- Welcome Banner for Zeroed Start -->
+        <div id="welcomeBanner" class="no-print glass-panel p-6 rounded-2xl border border-emerald-500/30 mb-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center space-x-4">
+                <div class="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <i data-lucide="sparkles" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Тавтай морил! Шинэ эхлэл бэлэн боллоо ✨</h2>
+                    <p class="text-xs text-gray-300 mt-1">Бүх үзүүлэлт 0-ээс эхэллээ. Анхны даалгавар эсвэл зорилгоо оруулж бүтээмжийн аяллаа эхлүүлээрэй!</p>
+                </div>
+            </div>
+            <button onclick="switchTab('planning')" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-dark-900 font-extrabold text-xs rounded-xl shadow-neon-emerald transition whitespace-nowrap">
+                + Анхны Даалгавар Нэмэх
+            </button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="view-dashboard" class="tab-content space-y-8">
+            <!-- Hero Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="glass-panel p-5 rounded-2xl gold-border-glow relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold tracking-wider text-gray-400 uppercase">Өдрийн Бүтээмжийн Онон</span>
+                        <div class="p-2 rounded-xl bg-gold-500/10 text-gold-400"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                    </div>
+                    <div class="text-3xl font-extrabold gold-gradient-text mb-1" id="dashTodayScore">0%</div>
+                    <p class="text-xs text-gray-400">Өнөөдрийн гүйцэтгэлийн хувь</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-violet-500/20 shadow-neon-violet relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold tracking-wider text-gray-400 uppercase">Идэвхтэй Цуврал</span>
+                        <div class="p-2 rounded-xl bg-violet-500/10 text-violet-400"><i data-lucide="flame" class="w-5 h-5"></i></div>
+                    </div>
+                    <div class="text-3xl font-extrabold text-white mb-1" id="dashStreakDays">0 Хоног</div>
+                    <p class="text-xs text-gray-400">Рекорд: <span class="text-gold-400 font-bold" id="dashMaxStreak">0 хоног</span></p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold tracking-wider text-gray-400 uppercase">Төвлөрлийн Хугацаа</span>
+                        <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                    </div>
+                    <div class="text-3xl font-extrabold text-white mb-1" id="dashFocusHours">0м</div>
+                    <p class="text-xs text-gray-400">Дуусгасан Помодоро: <span class="text-blue-400 font-bold" id="dashPomoCount">0</span></p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold tracking-wider text-gray-400 uppercase">Биелүүлсэн Даалгавар</span>
+                        <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+                    </div>
+                    <div class="text-3xl font-extrabold text-white mb-1" id="dashCompletedTasks">0 / 0</div>
+                    <p class="text-xs text-gray-400">Нийт гүйцэтгэл: <span class="text-emerald-400 font-bold" id="dashTaskPercent">0%</span></p>
+                </div>
+            </div>
+
+            <!-- Achievement Badges Showcase -->
+            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="award" class="w-5 h-5 text-gold-400"></i>
+                        <h3 class="font-bold text-lg text-white">Ололт Амжилтууд (Achievements)</h3>
+                    </div>
+                    <span class="text-xs text-gold-400 font-medium" id="badgesCountText">0 / 6 Нээгдсэн</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4" id="badgesContainer">
+                    <!-- Badges rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- GitHub Style Habit Heatmap & Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Heatmap (2 cols) -->
+                <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="grid" class="w-5 h-5 text-violet-400"></i>
+                                <h3 class="font-bold text-lg text-white">Бүтээмжийн Календарь (Activity Heatmap)</h3>
+                            </div>
+                            <span class="text-xs text-gray-400">Сүүлийн 12 долооног</span>
+                        </div>
+                        <!-- GitHub Heatmap Matrix -->
+                        <div class="overflow-x-auto pb-2">
+                            <div id="githubHeatmap" class="inline-grid grid-rows-7 grid-flow-col gap-1.5 min-w-[500px]">
+                                <!-- Cells populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Heatmap Legend -->
+                    <div class="flex items-center justify-end space-x-2 text-xs text-gray-400 mt-4">
+                        <span>Идэвхгүй</span>
+                        <div class="w-3 h-3 rounded-sm bg-dark-700"></div>
+                        <div class="w-3 h-3 rounded-sm bg-emerald-950"></div>
+                        <div class="w-3 h-3 rounded-sm bg-emerald-700"></div>
+                        <div class="w-3 h-3 rounded-sm bg-gold-600"></div>
+                        <div class="w-3 h-3 rounded-sm bg-gold-400"></div>
+                        <span>Идэвхтэй</span>
+                    </div>
+                </div>
+
+                <!-- Weekly Focus Chart -->
+                <div class="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-gold-400"></i>
+                            <h3 class="font-bold text-lg text-white">7 Хоногийн Төвлөрөл</h3>
+                        </div>
+                        <span class="text-xs text-gray-400">Цагаар</span>
+                    </div>
+                    <div class="relative h-48 w-full flex items-center justify-center">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: DAILY PLANNING & EISENHOWER MATRIX -->
+        <section id="view-planning" class="tab-content hidden space-y-8">
+            <!-- Add Task Header Form -->
+            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-gold-400"></i>
+                    <span>Шинэ Даалгавар Нэмэх</span>
+                </h3>
+                <form id="addTaskForm" onsubmit="handleAddTask(event)" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-4">
+                        <input type="text" id="taskTitle" required placeholder="Нэр: Ж.ш. Англи үг цээжлэх..." class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-white placeholder-gray-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <select id="taskPriority" class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-gray-300">
+                            <option value="ЯАРТАЙ">🔥 ЯАРТАЙ</option>
+                            <option value="ЧУХАЛ" selected>⭐ ЧУХАЛ</option>
+                            <option value="ЭНГИЙН">🌱 ЭНГИЙН</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <select id="taskQuadrant" class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-gray-300">
+                            <option value="q1">Q1: Яаралтай & Чухал</option>
+                            <option value="q2" selected>Q2: Яаралтай бус & Чухал</option>
+                            <option value="q3">Q3: Яаралтай & Чухал бус</option>
+                            <option value="q4">Q4: Яаралтай бус & Чухал бус</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="w-full h-full min-h-[42px] bg-gradient-to-r from-gold-500 to-emerald-500 hover:from-gold-400 hover:to-emerald-400 text-dark-900 font-bold rounded-xl shadow-neon-gold transition flex items-center justify-center space-x-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Нэмэх</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filter Badges -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-2">
+                <span class="text-xs text-gray-400 font-medium">Шүүлтүүр:</span>
+                <button onclick="filterTasks('БҮХ')" id="filter-БҮХ" class="filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-gold-500 text-dark-900 border border-gold-400">БҮХ</button>
+                <button onclick="filterTasks('🔥 ЯАРТАЙ')" id="filter-🔥 ЯАРТАЙ" class="filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-dark-800 text-gray-400 hover:text-white border border-white/5">🔥 ЯАРТАЙ</button>
+                <button onclick="filterTasks('⭐ ЧУХАЛ')" id="filter-⭐ ЧУХАЛ" class="filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-dark-800 text-gray-400 hover:text-white border border-white/5">⭐ ЧУХАЛ</button>
+                <button onclick="filterTasks('🌱 ЭНГИЙН')" id="filter-🌱 ЭНГИЙН" class="filter-btn px-3 py-1 rounded-lg text-xs font-bold bg-dark-800 text-gray-400 hover:text-white border border-white/5">🌱 ЭНГИЙН</button>
+            </div>
+
+            <!-- Eisenhower Matrix Quad Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Quadrant 1 -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-rose-500 border-white/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-400">Q1</span>
+                            <h4 class="font-bold text-white">Яаралтай ба Чухал</h4>
+                        </div>
+                        <span class="text-xs text-gray-400" id="count-q1">0 Даалгавар</span>
+                    </div>
+                    <div id="list-q1" class="space-y-2.5 min-h-[100px] custom-scrollbar max-h-80 overflow-y-auto">
+                        <!-- Empty State -->
+                    </div>
+                </div>
+
+                <!-- Quadrant 2 -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-gold-400 border-white/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold bg-gold-400/20 text-gold-400">Q2</span>
+                            <h4 class="font-bold text-white">Яаралтай бус боловч Чухал</h4>
+                        </div>
+                        <span class="text-xs text-gray-400" id="count-q2">0 Даалгавар</span>
+                    </div>
+                    <div id="list-q2" class="space-y-2.5 min-h-[100px] custom-scrollbar max-h-80 overflow-y-auto">
+                        <!-- Empty State -->
+                    </div>
+                </div>
+
+                <!-- Quadrant 3 -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500 border-white/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400">Q3</span>
+                            <h4 class="font-bold text-white">Яаралтай боловч Чухал бус</h4>
+                        </div>
+                        <span class="text-xs text-gray-400" id="count-q3">0 Даалгавар</span>
+                    </div>
+                    <div id="list-q3" class="space-y-2.5 min-h-[100px] custom-scrollbar max-h-80 overflow-y-auto">
+                        <!-- Empty State -->
+                    </div>
+                </div>
+
+                <!-- Quadrant 4 -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-gray-500 border-white/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-500/20 text-gray-400">Q4</span>
+                            <h4 class="font-bold text-white">Яаралтай бус ба Чухал бус</h4>
+                        </div>
+                        <span class="text-xs text-gray-400" id="count-q4">0 Даалгавар</span>
+                    </div>
+                    <div id="list-q4" class="space-y-2.5 min-h-[100px] custom-scrollbar max-h-80 overflow-y-auto">
+                        <!-- Empty State -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: LONG-TERM GOALS TRACKER -->
+        <section id="view-goals" class="tab-content hidden space-y-8">
+            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                    <i data-lucide="target" class="w-5 h-5 text-gold-400"></i>
+                    <span>Шинэ Том Зорилго Нэмэх</span>
+                </h3>
+                <form id="addGoalForm" onsubmit="handleAddGoal(event)" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-5">
+                        <input type="text" id="goalTitle" required placeholder="Зорилгын нэр: Ж.ш. IELTS 7.5 оноо авах..." class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-white placeholder-gray-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <input type="date" id="goalTargetDate" required class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-gray-300">
+                    </div>
+                    <div class="md:col-span-2">
+                        <select id="goalCategory" class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold-400 text-gray-300">
+                            <option value="Карьер">💼 Карьер</option>
+                            <option value="Суралцах" selected>📚 Суралцах</option>
+                            <option value="Эрүүл мэнд">🏃 Эрүүл мэнд</option>
+                            <option value="Санхүү">💰 Санхүү</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="w-full h-full min-h-[42px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-neon-violet transition flex items-center justify-center space-x-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Зорилго Нэмэх</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Long-Term Goals List Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="goalsGrid">
+                <!-- Dynamically Injected Goals -->
+            </div>
+        </section>
+
+        <!-- TAB 4: POMODORO STUDIO & AMBIENT SYNTHESIZER -->
+        <section id="view-pomodoro" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Main Timer Display (7 Cols) -->
+                <div class="lg:col-span-7 glass-panel p-8 rounded-3xl border border-violet-500/20 shadow-neon-violet flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div class="absolute -top-12 -left-12 w-40 h-40 bg-violet-600/10 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-12 -right-12 w-40 h-40 bg-gold-500/10 rounded-full blur-3xl"></div>
+
+                    <!-- Timer Mode Switchers -->
+                    <div class="flex items-center space-x-2 p-1.5 rounded-full bg-dark-800 border border-white/10 mb-8">
+                        <button onclick="setTimerMode('work')" id="pomoModeWork" class="px-5 py-2 rounded-full text-xs font-bold transition bg-gradient-to-r from-violet-600 to-violet-800 text-white shadow">Төвлөрөл (25м)</button>
+                        <button onclick="setTimerMode('short')" id="pomoModeShort" class="px-5 py-2 rounded-full text-xs font-bold transition text-gray-400 hover:text-white">Богино Амралт (5м)</button>
+                        <button onclick="setTimerMode('long')" id="pomoModeLong" class="px-5 py-2 rounded-full text-xs font-bold transition text-gray-400 hover:text-white">Урт Амралт (15м)</button>
+                    </div>
+
+                    <!-- Digital Countdown Display -->
+                    <div class="relative my-4">
+                        <div class="text-7xl sm:text-8xl font-black tracking-tight text-white font-mono drop-shadow-md" id="timerDisplay">
+                            25:00
+                        </div>
+                        <p class="text-xs uppercase tracking-widest text-gold-400 font-semibold mt-2" id="timerStatusLabel">Гүн Төвлөрлийн Сесс</p>
+                    </div>
+
+                    <!-- Timer Controls -->
+                    <div class="flex items-center space-x-4 mt-8">
+                        <button onclick="toggleTimer()" id="pomoStartBtn" class="px-8 py-3.5 bg-gradient-to-r from-gold-500 via-yellow-500 to-gold-600 text-dark-900 font-extrabold rounded-2xl shadow-neon-gold hover:opacity-95 transition flex items-center space-x-2 text-base">
+                            <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                            <span id="pomoStartBtnText">Эхлүүлэх</span>
+                        </button>
+                        <button onclick="resetTimer()" class="p-3.5 rounded-2xl bg-dark-800 border border-white/10 text-gray-300 hover:text-white hover:bg-dark-700 transition">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Web Audio Ambient Synthesizer (5 Cols) -->
+                <div class="lg:col-span-5 glass-panel p-6 rounded-3xl border border-white/5 space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-xl bg-violet-500/10 text-violet-400">
+                            <i data-lucide="headphones" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white">Амбиент Эх Авиа (Web Audio API)</h3>
+                            <p class="text-xs text-gray-400">Сүлжээ шаардлагагүй дууны симулятор</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Rain Sound -->
+                        <div class="bg-dark-800/80 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="cloud-rain" class="w-5 h-5 text-blue-400"></i>
+                                <span class="text-sm font-medium text-gray-200">Борооны Чимээ</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" id="rainVolume" min="0" max="1" step="0.05" value="0.2" class="w-20 accent-violet-500">
+                                <button onclick="toggleAmbient('rain')" id="btnSoundRain" class="px-3 py-1.5 rounded-lg bg-dark-700 text-xs font-bold text-gray-300 hover:text-white border border-white/10">Асаах</button>
+                            </div>
+                        </div>
+
+                        <!-- White Noise -->
+                        <div class="bg-dark-800/80 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="wind" class="w-5 h-5 text-teal-400"></i>
+                                <span class="text-sm font-medium text-gray-200">Цагаан Чимээ (Noise)</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" id="whiteVolume" min="0" max="1" step="0.05" value="0.2" class="w-20 accent-violet-500">
+                                <button onclick="toggleAmbient('white')" id="btnSoundWhite" class="px-3 py-1.5 rounded-lg bg-dark-700 text-xs font-bold text-gray-300 hover:text-white border border-white/10">Асаах</button>
+                            </div>
+                        </div>
+
+                        <!-- Lo-Fi Beat Simulator -->
+                        <div class="bg-dark-800/80 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="disc" class="w-5 h-5 text-gold-400"></i>
+                                <span class="text-sm font-medium text-gray-200">Lo-Fi Синт Чимээ</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" id="lofiVolume" min="0" max="1" step="0.05" value="0.2" class="w-20 accent-gold-400">
+                                <button onclick="toggleAmbient('lofi')" id="btnSoundLofi" class="px-3 py-1.5 rounded-lg bg-dark-700 text-xs font-bold text-gray-300 hover:text-white border border-white/10">Асаах</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 5: SMART HABIT TRACKER -->
+        <section id="view-habits" class="tab-content hidden space-y-8">
+            <div class="glass-panel p-6 rounded-2xl border border-white/5 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="flame" class="w-5 h-5 text-gold-400"></i>
+                        <span>Тогтмол Дадал Мөшгигч & Streak</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Өдөр тутмын зуршлаа тогтвортой бүтээж, streak-ээ хамгаалаарай</p>
+                </div>
+                <button onclick="openNewHabitModal()" class="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold text-xs rounded-xl shadow-neon-violet transition flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Шинэ Дадал Нэмэх</span>
+                </button>
+            </div>
+
+            <!-- Habit List Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="habitsGrid">
+                <!-- Habit Cards Injected Here -->
+            </div>
+        </section>
+
+        <!-- TAB 6: CALENDAR & ARCHIVE SYSTEM -->
+        <section id="view-archive" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Calendar (7 cols) -->
+                <div class="lg:col-span-7 glass-panel p-6 rounded-2xl border border-white/5">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="calendar-days" class="w-5 h-5 text-gold-400"></i>
+                            <span id="calendarMonthTitle">Өнөөдөр</span>
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeMonth(-1)" class="p-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-gray-300 border border-white/5"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                            <button onclick="changeMonth(1)" class="p-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-gray-300 border border-white/5"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Days Header -->
+                    <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-gray-400 mb-2">
+                        <div>Да</div><div>Мя</div><div>Лх</div><div>Пү</div><div>Ба</div><div>Бям</div><div>Ням</div>
+                    </div>
+
+                    <!-- Calendar Matrix -->
+                    <div class="grid grid-cols-7 gap-2 text-center" id="calendarGrid">
+                        <!-- Calendar Days dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Archive Details Inspector (5 cols) -->
+                <div class="lg:col-span-5 glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
+                            <div>
+                                <span class="text-xs text-gold-400 font-semibold" id="archiveSelectedDate">Сонгосон өдөр</span>
+                                <h4 class="text-lg font-bold text-white">Архивлагдсан Өдрийн Тайлан</h4>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-gold-500/20 text-gold-400 border border-gold-500/30" id="archiveDayScore">Бүтээмж: 0%</span>
+                        </div>
+
+                        <!-- Filter options -->
+                        <div class="space-y-4 mb-6">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="smile" class="w-4 h-4 text-violet-400"></i>
+                                <span class="text-sm font-medium text-gray-300">Сэтгэл зүй:</span>
+                                <span class="text-sm text-gold-400 font-bold" id="archiveMood">Тэмдэглээгүй</span>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-semibold text-gray-400 uppercase mb-2">Гүйцэтгэсэн Даалгавар:</h5>
+                                <ul class="space-y-1.5 text-xs text-gray-300 max-h-48 overflow-y-auto custom-scrollbar" id="archiveTaskList">
+                                    <li class="text-gray-500 italic">Энэ өдөр тэмдэглэгдсэн даалгавар байхгүй байна.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-white/5 flex space-x-3">
+                        <button onclick="window.print()" class="w-full py-2.5 bg-dark-800 hover:bg-dark-700 text-white font-bold text-xs rounded-xl border border-white/10 transition flex items-center justify-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>Тайлан Тайлагнах (PDF)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: JOURNAL & AI COACH -->
+        <section id="view-journal" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Daily Reflection Input (7 cols) -->
+                <div class="lg:col-span-7 glass-panel p-6 rounded-2xl border border-white/5 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="book-open" class="w-5 h-5 text-gold-400"></i>
+                            <span>Өдрийн Эргэцүүлэл & Тэмдэглэл</span>
+                        </h3>
+                        <span class="text-xs text-gray-400">Өнөөдөр</span>
+                    </div>
+
+                    <!-- Mood Selection -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-2">Өнөөдрийн сэтгэл зүйн байдал:</label>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="selectMood('🔥 Урам зоригтой')" class="mood-btn p-2.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xl text-center flex-1">🔥</button>
+                            <button onclick="selectMood('⚡ Бүтээлч')" class="mood-btn p-2.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xl text-center flex-1">⚡</button>
+                            <button onclick="selectMood('🌱 Тайван')" class="mood-btn p-2.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xl text-center flex-1">🌱</button>
+                            <button onclick="selectMood('😴 Ядарсан')" class="mood-btn p-2.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xl text-center flex-1">😴</button>
+                        </div>
+                    </div>
+
+                    <!-- Journal Text Area -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-2">Өнөөдрийн ололт, сургамж, эргэцүүлэл:</label>
+                        <textarea id="journalInputText" rows="6" placeholder="Өнөөдөр юу сайн болов? Юуг сайжруулах вэ?..." class="w-full bg-dark-800 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 custom-scrollbar"></textarea>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <button onclick="saveJournalEntry()" class="px-5 py-2.5 bg-dark-800 hover:bg-dark-700 text-white font-bold text-xs rounded-xl border border-white/10 transition">
+                            Хадгалах
+                        </button>
+                        <button onclick="generateAiInsight()" class="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-gold-500 hover:from-violet-500 hover:to-gold-400 text-dark-900 font-extrabold text-xs rounded-xl shadow-neon-gold transition flex items-center space-x-2">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span>AI Коучаар Анализ Хийлгэх</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Productivity Advisor Feedback Panel (5 cols) -->
+                <div class="lg:col-span-5 glass-panel p-6 rounded-2xl border border-violet-500/30 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-violet-600/20 rounded-full blur-2xl"></div>
+
+                    <div>
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-gold-400 p-[1px] flex items-center justify-center">
+                                <div class="w-full h-full bg-dark-900 rounded-[11px] flex items-center justify-center">
+                                    <i data-lucide="bot" class="w-5 h-5 text-gold-400"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-base">Odoo AI Бүтээмжийн Коуч</h4>
+                                <p class="text-xs text-gray-400">Ухаалаг зөвлөх систем</p>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div id="aiFeedbackBox" class="bg-dark-800/80 rounded-xl p-5 border border-white/5 space-y-3">
+                            <div class="flex items-center space-x-2 text-gold-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="info" class="w-4 h-4"></i>
+                                <span id="aiFeedbackTitle">Тавтай морил!</span>
+                            </div>
+                            <p class="text-xs text-gray-300 leading-relaxed" id="aiFeedbackBody">
+                                Та одоогоор шинээр эхэлж байна. Даалгавар болон зорилтот ажлуудаа оруулж эхэлснээр би таны бүтээмжийн хэв маягт тохирсон зөвлөмж өгөх болно!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-white/5 text-center">
+                        <span class="text-[11px] text-gray-500">Odoo Premium AI Coach • Local Storage Enabled</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- New Habit Modal Popup -->
+    <div id="habitModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden no-print">
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 w-full max-w-md mx-4 space-y-4">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="font-bold text-white text-lg">Шинэ Дадал Нэмэх</h3>
+                <button onclick="closeNewHabitModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Дадлын Нэр:</label>
+                <input type="text" id="habitModalTitle" placeholder="Ж.ш. Өглөө 20 мин ном уших..." class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Долоо хоногийн зорилт (Өдөр):</label>
+                <input type="number" id="habitModalTarget" min="1" max="7" value="5" class="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeNewHabitModal()" class="px-4 py-2 bg-dark-800 text-gray-300 rounded-xl text-xs font-bold">Цуцлах</button>
+                <button onclick="saveNewHabit()" class="px-4 py-2 bg-gradient-to-r from-gold-500 to-emerald-500 text-dark-900 rounded-xl text-xs font-bold">Хадгалах</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Data Confirmation Modal -->
+    <div id="resetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden no-print">
+        <div class="glass-panel p-6 rounded-2xl border border-rose-500/30 w-full max-w-md mx-4 space-y-4">
+            <div class="flex items-center space-x-3 text-rose-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                <h3 class="font-bold text-white text-lg">Бүх датаг арилгах уу?</h3>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+                Энэ үйлдэл нь таны оруулсан бүх өдрийн төлөвлөгөө, зорилгууд, дадлын түүх болон оноог устгаж 0 болгон шинэчлэх болно. Та итгэлтэй байна уу?
+            </p>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeResetModal()" class="px-4 py-2 bg-dark-800 text-gray-300 rounded-xl text-xs font-bold">Цуцлах</button>
+                <button onclick="confirmResetAllData()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg">Арилгах</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="no-print border-t border-gray-800/60 py-6 text-center text-xs text-gray-500 mt-12">
+        <p>© Odoo Premium Edition • Бүх эрх хуулиар хамгаалагдсан.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Completely Zeroed / Empty State Initial Object
+        const ZERO_STATE = {
+            user: {
+                xp: 0,
+                maxXp: 1000,
+                level: 1,
+                levelTitle: "Эхлэгч",
+                vipTier: "NEW MEMBER",
+                streak: 0,
+                maxStreak: 0,
+                totalFocusMins: 0,
+                pomoCount: 0
+            },
+            tasks: [],
+            goals: [],
+            habits: [],
+            archive: {},
+            badges: [
+                { id: 'b1', name: '30-Day Streak', icon: 'flame', unlocked: false },
+                { id: 'b2', name: 'Productivity Master', icon: 'swords', unlocked: false },
+                { id: 'b3', name: 'Night Focus', icon: 'moon', unlocked: false },
+                { id: 'b4', name: 'Eisenhower Pro', icon: 'layout-grid', unlocked: false },
+                { id: 'b5', name: 'Pomodoro Hero', icon: 'timer', unlocked: false },
+                { id: 'b6', name: 'Archival Master', icon: 'archive', unlocked: false }
+            ],
+            selectedMood: '',
+            journalText: ''
+        };
+
+        // Load or initialize state
+        let appData = JSON.parse(localStorage.getItem('odoo_premium_data_v2'));
+        if (!appData) {
+            appData = JSON.parse(JSON.stringify(ZERO_STATE));
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('odoo_premium_data_v2', JSON.stringify(appData));
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-gold-400', 'text-gold-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('border-gold-400', 'text-gold-400');
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+            }
+        }
+
+        // Render Dashboard UI
+        function renderDashboard() {
+            const completedCount = appData.tasks.filter(t => t.completed).length;
+            const totalTasks = appData.tasks.length;
+            const score = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
+            document.getElementById('dashTodayScore').innerText = `${score}%`;
+            document.getElementById('dashStreakDays').innerText = `${appData.user.streak} Хоног`;
+            document.getElementById('dashMaxStreak').innerText = `${appData.user.maxStreak} хоног`;
+            document.getElementById('dashFocusHours').innerText = `${appData.user.totalFocusMins}м`;
+            document.getElementById('dashPomoCount').innerText = appData.user.pomoCount;
+            document.getElementById('dashCompletedTasks').innerText = `${completedCount} / ${totalTasks}`;
+            document.getElementById('dashTaskPercent').innerText = `${score}%`;
+
+            // User level UI
+            document.getElementById('userXpText').innerText = `${appData.user.xp} / ${appData.user.maxXp} XP`;
+            document.getElementById('userLevelTitle').innerText = `Түвшин ${appData.user.level}: ${appData.user.levelTitle}`;
+            document.getElementById('userVipTier').innerText = appData.user.vipTier;
+            const xpPercent = Math.min(100, Math.round((appData.user.xp / appData.user.maxXp) * 100));
+            document.getElementById('xpProgressBar').style.width = `${xpPercent}%`;
+
+            // Badges Render
+            const unlockedCount = appData.badges.filter(b => b.unlocked).length;
+            document.getElementById('badgesCountText').innerText = `${unlockedCount} / ${appData.badges.length} Нээгдсэн`;
+            
+            const container = document.getElementById('badgesContainer');
+            container.innerHTML = appData.badges.map(b => `
+                <div class="p-3 rounded-xl ${b.unlocked ? 'bg-dark-800 border border-gold-500/30' : 'bg-dark-900/40 opacity-40 border border-white/5'} flex flex-col items-center text-center space-y-2">
+                    <div class="p-2 rounded-lg ${b.unlocked ? 'bg-gold-500/10 text-gold-400' : 'bg-gray-800 text-gray-500'}">
+                        <i data-lucide="${b.icon}" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-[11px] font-bold text-gray-200 leading-tight">${b.name}</span>
+                </div>
+            `).join('');
+
+            renderGitHubHeatmap();
+            lucide.createIcons();
+        }
+
+        // GitHub Style Heatmap Generator
+        function renderGitHubHeatmap() {
+            const heatmap = document.getElementById('githubHeatmap');
+            heatmap.innerHTML = '';
+            for(let i = 0; i < 84; i++) {
+                const cell = document.createElement('div');
+                cell.className = `w-3.5 h-3.5 rounded-sm bg-dark-700 transition hover:scale-125 cursor-pointer`;
+                cell.title = `Идэвхгүй өдөр`;
+                heatmap.appendChild(cell);
+            }
+        }
+
+        // Tasks & Eisenhower Matrix Logic
+        let activeTaskFilter = 'БҮХ';
+
+        function filterTasks(prio) {
+            activeTaskFilter = prio;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-gold-500', 'text-dark-900');
+                b.classList.add('bg-dark-800', 'text-gray-400');
+            });
+            const selected = document.getElementById(`filter-${prio}`);
+            if (selected) {
+                selected.classList.add('bg-gold-500', 'text-dark-900');
+                selected.classList.remove('bg-dark-800', 'text-gray-400');
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+                const listEl = document.getElementById(`list-${q}`);
+                let qTasks = appData.tasks.filter(t => t.quad === q);
+
+                if (activeTaskFilter !== 'БҮХ') {
+                    qTasks = qTasks.filter(t => t.prio === activeTaskFilter);
+                }
+
+                document.getElementById(`count-${q}`).innerText = `${qTasks.length} Даалгавар`;
+
+                if (qTasks.length === 0) {
+                    listEl.innerHTML = `<div class="text-center py-6 text-xs text-gray-500 italic">Даалгавар одоогоор байхгүй байна.</div>`;
+                } else {
+                    listEl.innerHTML = qTasks.map(t => `
+                        <div class="p-3 rounded-xl bg-dark-800/90 border border-white/5 flex items-center justify-between group hover:border-gold-500/30 transition">
+                            <div class="flex items-center space-x-3 flex-1 min-w-0 pr-2">
+                                <button onclick="toggleTask('${t.id}')" class="text-gray-400 hover:text-gold-400 transition">
+                                    <i data-lucide="${t.completed ? 'check-circle-2' : 'circle'}" class="w-5 h-5 ${t.completed ? 'text-emerald-400' : ''}"></i>
+                                </button>
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-xs text-gray-200 font-medium truncate ${t.completed ? 'line-through opacity-50' : ''}">${t.title}</span>
+                                    <span class="text-[10px] text-gold-400 font-semibold">${t.prio}</span>
+                                </div>
+                            </div>
+                            <button onclick="deleteTask('${t.id}')" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    `).join('');
+                }
+            });
+            lucide.createIcons();
+            renderDashboard();
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const prio = document.getElementById('taskPriority').value;
+            const quad = document.getElementById('taskQuadrant').value;
+
+            appData.tasks.push({
+                id: 't_' + Date.now(),
+                title,
+                prio,
+                quad,
+                completed: false
+            });
+
+            saveData();
+            renderTasks();
+            document.getElementById('addTaskForm').reset();
+            showToast('Даалгавар амжилттай нэмэгдлээ!');
+        }
+
+        function toggleTask(id) {
+            const task = appData.tasks.find(t => t.id === id);
+            if(task) {
+                task.completed = !task.completed;
+                if(task.completed) {
+                    appData.user.xp += 50;
+                    if (appData.user.xp >= appData.user.maxXp) {
+                        appData.user.level++;
+                        appData.user.maxXp += 500;
+                        showToast(`Баяр хүргэе! Түвшин ${appData.user.level} боллоо! 🎉`);
+                    }
+                }
+                saveData();
+                renderTasks();
+            }
+        }
+
+        function deleteTask(id) {
+            appData.tasks = appData.tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+            showToast('Даалгавар устгагдлаа.');
+        }
+
+        // Long Term Goals Logic
+        function renderGoals() {
+            const grid = document.getElementById('goalsGrid');
+            if (appData.goals.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full glass-panel p-8 rounded-2xl text-center space-y-3">
+                        <i data-lucide="target" class="w-10 h-10 text-gray-500 mx-auto"></i>
+                        <p class="text-sm font-semibold text-gray-400">Урт хугацааны зорилго хараахан бүртгэгдээгүй байна.</p>
+                        <p class="text-xs text-gray-500">Дээрх маягтыг ашиглан анхны зорилгоо нэмж, ахицаа 0-100% хооронд тохируулаарай!</p>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = appData.goals.map(g => `
+                    <div class="glass-panel p-5 rounded-2xl border border-white/5 space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">${g.category}</span>
+                                <h4 class="font-bold text-white text-base mt-1">${g.title}</h4>
+                                <p class="text-xs text-gray-400">Хүрэх огноо: ${g.targetDate}</p>
+                            </div>
+                            <button onclick="deleteGoal('${g.id}')" class="text-gray-500 hover:text-rose-400 transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-300 mb-1 font-semibold">
+                                <span>Явц (Progress):</span>
+                                <span class="text-gold-400">${g.progress}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${g.progress}" onchange="updateGoalProgress('${g.id}', this.value)" class="w-full accent-gold-400">
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function handleAddGoal(e) {
+            e.preventDefault();
+            const title = document.getElementById('goalTitle').value;
+            const targetDate = document.getElementById('goalTargetDate').value;
+            const category = document.getElementById('goalCategory').value;
+
+            appData.goals.push({
+                id: 'g_' + Date.now(),
+                title,
+                targetDate,
+                category,
+                progress: 0
+            });
+
+            saveData();
+            renderGoals();
+            document.getElementById('addGoalForm').reset();
+            showToast('Зорилго нэмэгдлээ!');
+        }
+
+        function updateGoalProgress(id, val) {
+            const goal = appData.goals.find(g => g.id === id);
+            if(goal) {
+                goal.progress = parseInt(val);
+                saveData();
+                renderGoals();
+            }
+        }
+
+        function deleteGoal(id) {
+            appData.goals = appData.goals.filter(g => g.id !== id);
+            saveData();
+            renderGoals();
+        }
+
+        // Pomodoro Timer Logic
+        let timerSeconds = 25 * 60;
+        let timerInterval = null;
+        let isTimerRunning = false;
+
+        function setTimerMode(mode) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            document.getElementById('pomoStartBtnText').innerText = 'Эхлүүлэх';
+
+            if(mode === 'work') timerSeconds = 25 * 60;
+            else if(mode === 'short') timerSeconds = 5 * 60;
+            else if(mode === 'long') timerSeconds = 15 * 60;
+
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const secs = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+        }
+
+        function toggleTimer() {
+            if(isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('pomoStartBtnText').innerText = 'Үргэлжлүүлэх';
+            } else {
+                isTimerRunning = true;
+                document.getElementById('pomoStartBtnText').innerText = 'Түр Зөгсөх';
+                timerInterval = setInterval(() => {
+                    if(timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        appData.user.pomoCount++;
+                        appData.user.totalFocusMins += 25;
+                        appData.user.xp += 100;
+                        saveData();
+                        renderDashboard();
+                        showToast('Помодоро сесс амжилттай дууслаа! +100 XP');
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerSeconds = 25 * 60;
+            updateTimerDisplay();
+            document.getElementById('pomoStartBtnText').innerText = 'Эхлүүлэх';
+        }
+
+        // Web Audio Synthesizer for Ambient Sounds
+        let audioCtx = null;
+        let noiseNodes = {};
+
+        function initAudio() {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleAmbient(type) {
+            initAudio();
+            const btn = document.getElementById(`btnSound${type.charAt(0).toUpperCase() + type.slice(1)}`);
+
+            if(noiseNodes[type]) {
+                noiseNodes[type].stop();
+                delete noiseNodes[type];
+                btn.innerText = 'Асаах';
+                btn.classList.remove('bg-gold-500', 'text-dark-900');
+            } else {
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = true;
+
+                const gainNode = audioCtx.createGain();
+                const volInput = document.getElementById(`${type}Volume`);
+                const vol = volInput ? parseFloat(volInput.value) : 0.2;
+                gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+
+                noise.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                noise.start();
+
+                noiseNodes[type] = noise;
+                btn.innerText = 'Унтраах';
+                btn.classList.add('bg-gold-500', 'text-dark-900');
+            }
+        }
+
+        // Habits Logic
+        function renderHabits() {
+            const grid = document.getElementById('habitsGrid');
+            if (appData.habits.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full glass-panel p-8 rounded-2xl text-center space-y-3">
+                        <i data-lucide="flame" class="w-10 h-10 text-gray-500 mx-auto"></i>
+                        <p class="text-sm font-semibold text-gray-400">Одоогоор идэвхтэй дадал байхгүй байна.</p>
+                        <p class="text-xs text-gray-500">"Шинэ Дадал Нэмэх" товчлуур дээр дарж өдөр бүрийн зуршлаа бүртгээрэй!</p>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = appData.habits.map(h => `
+                    <div class="glass-panel p-5 rounded-2xl border border-white/5 space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-white text-sm">${h.title}</h4>
+                                <p class="text-xs text-gold-400 mt-0.5">🔥 ${h.streak} хоногийн цуврал</p>
+                            </div>
+                            <button onclick="incrementHabit('${h.id}')" class="p-2 rounded-xl bg-gold-500/10 text-gold-400 hover:bg-gold-500 hover:text-dark-900 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Долоо хоногийн гүйцэтгэл</span>
+                                <span class="font-bold text-white">${h.current} / ${h.target} өдөр</span>
+                            </div>
+                            <div class="w-full bg-dark-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-violet-500 to-gold-400 h-full rounded-full" style="width: ${(h.current/h.target)*100}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function incrementHabit(id) {
+            const habit = appData.habits.find(h => h.id === id);
+            if(habit && habit.current < habit.target) {
+                habit.current++;
+                habit.streak++;
+                saveData();
+                renderHabits();
+                showToast('Дадал амжилттай бүртгэгдлээ!');
+            }
+        }
+
+        function openNewHabitModal() { document.getElementById('habitModal').classList.remove('hidden'); }
+        function closeNewHabitModal() { document.getElementById('habitModal').classList.add('hidden'); }
+
+        function saveNewHabit() {
+            const title = document.getElementById('habitModalTitle').value;
+            const target = parseInt(document.getElementById('habitModalTarget').value) || 5;
+            if(title) {
+                appData.habits.push({ id: 'h_' + Date.now(), title, streak: 0, target, current: 0 });
+                saveData();
+                renderHabits();
+                closeNewHabitModal();
+                document.getElementById('habitModalTitle').value = '';
+                showToast('Шинэ дадал нэмэгдлээ!');
+            }
+        }
+
+        // Calendar Render
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            for(let i = 1; i <= 31; i++) {
+                const day = document.createElement('div');
+                day.className = `p-3 rounded-xl bg-dark-800/60 border border-white/5 text-gray-400 text-xs hover:border-gold-400 cursor-pointer transition flex flex-col items-center justify-between h-14`;
+                day.innerHTML = `<span>${i}</span><div class="w-1.5 h-1.5 rounded-full bg-dark-700"></div>`;
+                grid.appendChild(day);
+            }
+        }
+
+        // AI Advice Simulator
+        function generateAiInsight() {
+            const feedbackTitle = document.getElementById('aiFeedbackTitle');
+            const feedbackBody = document.getElementById('aiFeedbackBody');
+            
+            feedbackTitle.innerText = "Анализ Уншиж Байна...";
+            feedbackBody.innerText = "Таны өнөөдрийн төлөвлөгөө болон дадлын гүйцэтгэлд нейрон сүлжээний анализ хийж байна...";
+
+            setTimeout(() => {
+                const taskCount = appData.tasks.length;
+                const completedCount = appData.tasks.filter(t => t.completed).length;
+
+                if (taskCount === 0) {
+                    feedbackTitle.innerText = "Зөвлөмж: Анхны даалгавраа оруулна уу!";
+                    feedbackBody.innerText = "Өнөөдөр хийж гүйцэтгэх хамгийн чухал 1-3 даалгавраа Өдрийн Төлөвлөгөө хэсэгт оруулж эхлээрэй.";
+                } else {
+                    feedbackTitle.innerText = `Гүйцэтгэлийн Үнэлгээ: ${completedCount}/${taskCount} Биелсэн`;
+                    feedbackBody.innerText = `Та өнөөдөр ${taskCount} даалгавраас ${completedCount}-ийг амжилттай дуусгасан байна. Төвлөрлөө үргэлжлүүлж Помодоро студийг ашиглаарай!`;
+                }
+            }, 1000);
+        }
+
+        function selectMood(m) {
+            appData.selectedMood = m;
+            saveData();
+            showToast(`Сэтгэл зүй тохируулагдлаа: ${m}`);
+        }
+
+        function saveJournalEntry() {
+            const text = document.getElementById('journalInputText').value;
+            appData.journalText = text;
+            saveData();
+            showToast('Тэмдэглэл амжилттай хадгалагдлаа!');
+        }
+
+        // Reset Data Modal
+        function openResetModal() { document.getElementById('resetModal').classList.remove('hidden'); }
+        function closeResetModal() { document.getElementById('resetModal').classList.add('hidden'); }
+
+        function confirmResetAllData() {
+            appData = JSON.parse(JSON.stringify(ZERO_STATE));
+            saveData();
+            closeResetModal();
+            location.reload();
+        }
+
+        // Export/Import JSON Data
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `odoo_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Мэдээлэл JSON файлар татагдлаа!');
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    appData = JSON.parse(e.target.result);
+                    saveData();
+                    location.reload();
+                } catch(err) {
+                    alert('Файл уншихад алдаа гарлаа. Зөв JSON файл сонгоно уу.');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        // Init Chart.js
+        function initChart() {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бям', 'Ням'],
+                    datasets: [{
+                        label: 'Төвлөрсөн Цаг',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(250, 204, 21, 0.6)',
+                        borderColor: '#FACC15',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#9CA3AF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } }
+                    }
+                }
+            });
+        }
+
+        // On Load Initialize
+        window.onload = function() {
+            lucide.createIcons();
+            renderDashboard();
+            renderTasks();
+            renderGoals();
+            renderHabits();
+            renderCalendar();
+            initChart();
+        };
+    </script>
+</body>
+</html>
